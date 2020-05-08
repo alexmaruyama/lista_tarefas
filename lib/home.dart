@@ -11,6 +11,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   TextEditingController _tarefa = TextEditingController();
   List _listaTarefas = [];
+  Map<String, dynamic> _itemRemovido = Map();
 
   Future<File> _getArquivo() async {
     final diretorio = await getApplicationDocumentsDirectory();
@@ -85,15 +86,9 @@ class _HomeState extends State<Home> {
                 itemBuilder: (context, indice) {
                   String item = _listaTarefas[indice]['titulo'];
                   return Dismissible(
+                    key: Key(DateTime.now().millisecond.toString()),
+                    direction: DismissDirection.endToStart,
                     background: Container(
-                      color: Colors.green,
-                      child: Row(
-                        children: <Widget>[
-                          Icon(Icons.edit),
-                        ],
-                      ),
-                    ),
-                    secondaryBackground: Container(
                       color: Colors.red,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -103,12 +98,23 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     onDismissed: (direcao) {
-                      if (direcao == DismissDirection.endToStart) {
-                        _listaTarefas.removeAt(indice);
-                        _salvarArquivo();
-                      }
+                      _itemRemovido = _listaTarefas[indice];
+                      _listaTarefas.removeAt(indice);
+                      _salvarArquivo();
+                      final SnackBar snackBar = SnackBar(
+                        duration: Duration(seconds: 10),
+                        content: Text('Tarefa removida!!!'),
+                        action: SnackBarAction(
+                            label: 'Desfazer',
+                            onPressed: () {
+                              setState(() {
+                                _listaTarefas.insert(indice, _itemRemovido);
+                              });
+                              _salvarArquivo();
+                            }),
+                      );
+                      Scaffold.of(context).showSnackBar(snackBar);
                     },
-                    key: Key(item),
                     child: CheckboxListTile(
                       title: Text(item),
                       value: _listaTarefas[indice]['realizada'],
